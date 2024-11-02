@@ -184,6 +184,25 @@ const LightPathVisualization = () => {
       points
     );
 
+    if (!curveIntersection) {
+      const greenEllipseIntersection = findEllipseIntersection(
+        circleIntersection,
+        secondReflection,
+        {x: 0, y: 0},
+        7.5,
+        5
+      );
+
+      if (greenEllipseIntersection) {
+        return {
+          firstIntersection,
+          circleIntersection,
+          secondCircleIntersection: null,
+          reflectionEnd: greenEllipseIntersection
+        };
+      }
+    }
+
     if (curveIntersection) {
       const curveTangent = getBezierTangent(points, curveIntersection.t);
       const curveNormal = { x: -curveTangent.y, y: curveTangent.x };
@@ -330,15 +349,6 @@ const LightPathVisualization = () => {
       5
     );
 
-    if (ellipseIntersection) {
-      return {
-        firstIntersection,
-        circleIntersection,
-        secondCircleIntersection,
-        reflectionEnd: ellipseIntersection
-      };
-    }
-
     const lineIntersection = findLineIntersection(
       secondCircleIntersection,
       thirdReflection,
@@ -346,10 +356,60 @@ const LightPathVisualization = () => {
       points.Jp
     );
 
-    const intersections = [
+    const thirdCircleIntersection = findCircleIntersection(
+      secondCircleIntersection,
+      thirdReflection,
+      circleCenter,
+      circleRadius
+    );
+
+    let intersections = [
       ellipseIntersection && { point: ellipseIntersection, type: 'ellipse' },
       lineIntersection && { point: lineIntersection, type: 'line' }
     ].filter(Boolean);
+
+    if (intersections.length === 0 && thirdCircleIntersection) {
+      const thirdCircleNormal = {
+        x: (thirdCircleIntersection.x - circleCenter.x) / circleRadius,
+        y: (thirdCircleIntersection.y - circleCenter.y) / circleRadius
+      };
+      const pinkReflection = getReflectionVector(thirdReflection, thirdCircleNormal);
+
+      const pinkCurveIntersection = findIntersection(
+        thirdCircleIntersection,
+        pinkReflection,
+        points
+      );
+
+      const pinkEllipseIntersection = findEllipseIntersection(
+        thirdCircleIntersection,
+        pinkReflection,
+        {x: 0, y: 0},
+        7.5,
+        5
+      );
+
+      const pinkIntersections = [
+        pinkCurveIntersection && { point: pinkCurveIntersection.point, type: 'curve' },
+        pinkEllipseIntersection && { point: pinkEllipseIntersection, type: 'ellipse' }
+      ].filter(Boolean);
+
+      const closestPinkIntersection = findClosestIntersection(thirdCircleIntersection, pinkIntersections);
+
+      return {
+        firstIntersection,
+        circleIntersection,
+        secondCircleIntersection,
+        reflectionEnd: thirdCircleIntersection,
+        pinkReflection: {
+          start: thirdCircleIntersection,
+          end: closestPinkIntersection ? closestPinkIntersection.point : {
+            x: thirdCircleIntersection.x + circleRadius * pinkReflection.x,
+            y: thirdCircleIntersection.y + circleRadius * pinkReflection.y
+          }
+        }
+      };
+    }
 
     const closestIntersection = findClosestIntersection(secondCircleIntersection, intersections);
 
