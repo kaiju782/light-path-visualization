@@ -4,6 +4,9 @@ const LightPathVisualization = () => {
   const [kPosition, setKPosition] = useState(-10);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [lightDistance, setLightDistance] = useState(0);
+  const [circleRadius, setCircleRadius] = useState(20);
+  const [ellipseHeight, setEllipseHeight] = useState(5);
+  const [jjDistance, setJJDistance] = useState(11.5);
   
   const width = 800;
   const height = 600;
@@ -11,24 +14,24 @@ const LightPathVisualization = () => {
   const scale = baseScale * zoomLevel;
   
   const getControlPoints = useCallback((k) => {
-    const J = {x: -11.5, y: -5}; 
-    const Jp = {x: 11.5, y: -5};
+    const J = {x: -jjDistance, y: -ellipseHeight}; 
+    const Jp = {x: jjDistance, y: -ellipseHeight};
     const K = {x: 0, y: k}; 
     
-    const offset = 8;
-    const controlYOffset = Math.abs(k + 5) * 0.8;
+    const offset = jjDistance * 0.7;
+    const controlYOffset = Math.abs(k + ellipseHeight) * 0.8;
     
     const P1 = {
       x: -offset,
-      y: -5 - controlYOffset
+      y: -ellipseHeight - controlYOffset
     };
     const P2 = {
       x: offset,
-      y: -5 - controlYOffset
+      y: -ellipseHeight - controlYOffset
     };
     
     return {J, Jp, K, P1, P2};
-  }, []);
+  }, [ellipseHeight, jjDistance]);
 
   const getBezierPoint = useCallback((points, t) => {
     const {J: P0, P1, P2, Jp: P3} = points;
@@ -139,8 +142,8 @@ const LightPathVisualization = () => {
   }, []);
 
   const findEllipseYAxisIntersection = useCallback((rx, ry) => {
-    return {x: 0, y: ry}; // 상부 교점만 반환
-  }, []);
+    return {x: 0, y: ellipseHeight};
+  }, [ellipseHeight]);
 
   const find45DegreeCircleIntersection = useCallback((startPoint, direction, center, radius) => {
     return findCircleIntersection(startPoint, direction, center, radius);
@@ -159,7 +162,7 @@ const LightPathVisualization = () => {
       firstReflection,
       {x: 0, y: 0},
       7.5,
-      5
+      ellipseHeight
     );
 
     if (blueEllipseIntersection) {
@@ -198,7 +201,7 @@ const LightPathVisualization = () => {
         secondReflection,
         {x: 0, y: 0},
         7.5,
-        5
+        ellipseHeight
       );
 
       if (greenEllipseIntersection) {
@@ -241,7 +244,7 @@ const LightPathVisualization = () => {
           pinkReflection,
           {x: 0, y: 0},
           7.5,
-          5
+          ellipseHeight
         );
 
         const pinkCircleIntersection = findCircleIntersection(
@@ -279,7 +282,7 @@ const LightPathVisualization = () => {
         curveReflection,
         {x: 0, y: 0},
         7.5,
-        5
+        ellipseHeight
       );
 
       const blueEllipseIntersection = findEllipseIntersection(
@@ -287,7 +290,7 @@ const LightPathVisualization = () => {
         curveReflection,
         {x: 0, y: 0},
         7.5,
-        5
+        ellipseHeight
       );
 
       const lineIntersection = findLineIntersection(
@@ -329,7 +332,7 @@ const LightPathVisualization = () => {
         secondReflection,
         {x: 0, y: 0},
         7.5,
-        5
+        ellipseHeight
       );
 
       return {
@@ -354,7 +357,7 @@ const LightPathVisualization = () => {
       thirdReflection,
       {x: 0, y: 0},
       7.5,
-      5
+      ellipseHeight
     );
 
     const lineIntersection = findLineIntersection(
@@ -394,7 +397,7 @@ const LightPathVisualization = () => {
         pinkReflection,
         {x: 0, y: 0},
         7.5,
-        5
+        ellipseHeight
       );
 
       const pinkIntersections = [
@@ -499,274 +502,324 @@ const LightPathVisualization = () => {
   };
 
   return (
-    <div className="w-full max-w-4xl p-4">
-      <div className="mb-4">
-        <label className="block mb-2">K Position (y-axis):</label>
-        <input 
-          type="range" 
-          min="-25" 
-          max="-5" 
-          step="0.5"
-          value={kPosition}
-          onChange={(e) => setKPosition(Number(e.target.value))}
-          className="w-full"
-        />
-        <div className="text-center mt-2">K y-position: {kPosition}</div>
-      </div>
-      
-      <div className="mb-4">
-        <label className="block mb-2">L Position (distance):</label>
-        <input 
-          type="range" 
-          min="-5" 
-          max="5" 
-          step="0.5"
-          value={lightDistance}
-          onChange={(e) => setLightDistance(Number(e.target.value))}
-          className="w-full"
-        />
-        <div className="text-center mt-2">L distance: {lightDistance}</div>
-      </div>
-      
-      <div className="mb-4 flex justify-center gap-4">
-        <button 
-          onClick={() => setZoomLevel(prev => Math.max(0.2, prev - 0.1))}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          줌 아웃
-        </button>
-        <button 
-          onClick={() => setZoomLevel(1)}
-          className="px-4 py-2 bg-gray-500 text-white rounded"
-        >
-          리셋
-        </button>
-        <button 
-          onClick={() => setZoomLevel(prev => Math.min(2, prev + 0.1))}
-          className="px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          줌 인
-        </button>
-        <span className="px-4 py-2">줌 레벨: {(zoomLevel * 100).toFixed(0)}%</span>
-      </div>
-      
-      <svg width={width} height={height} className="border border-gray-300">
-        <line 
-          x1="0" y1={height/2} 
-          x2={width} y2={height/2} 
-          stroke="gray" 
-          strokeWidth="1"
-        />
-        <line 
-          x1={width/2} y1="0" 
-          x2={width/2} y2={height} 
-          stroke="gray" 
-          strokeWidth="1"
-        />
-        
-        <circle 
-          cx={width/2}
-          cy={height/2}
-          r={scale * 20}
-          fill="none"
-          stroke="black"
-          strokeWidth={1 / zoomLevel}
-        />
-
-        <ellipse
-          cx={width/2}
-          cy={height/2}
-          rx={scale * 7.5}
-          ry={scale * 5}
-          fill="rgba(0,0,255,0.1)"
-          stroke="blue"
-          strokeWidth={1 / zoomLevel}
-        />
-
-        <path
-          d={drawBezier(points)}
-          fill="none"
-          stroke="red"
-          strokeWidth="2"
-        />
-
-        {Object.entries(points).map(([key, point]) => (
-          <circle
-            key={key}
-            cx={toScreen(point).x}
-            cy={toScreen(point).y}
-            r="4"
-            fill={key === 'K' ? 'red' : 'black'}
+    <div className="flex flex-row gap-4 w-full max-w-6xl p-4">
+      {/* 왼쪽: 시뮬레이션 뷰 */}
+      <div className="flex-1">
+        <svg width={width} height={height} className="border border-gray-300">
+          <line 
+            x1="0" y1={height/2} 
+            x2={width} y2={height/2} 
+            stroke="gray" 
+            strokeWidth="1"
           />
-        ))}
+          <line 
+            x1={width/2} y1="0" 
+            x2={width/2} y2={height} 
+            stroke="gray" 
+            strokeWidth="1"
+          />
+          
+          <circle 
+            cx={width/2}
+            cy={height/2}
+            r={scale * circleRadius}
+            fill="none"
+            stroke="black"
+            strokeWidth={1 / zoomLevel}
+          />
 
-        {(() => {
-          const L = {
-            x: -12.5 + lightDistance,
-            y: -12.5 + lightDistance
-          };
-          const sL = toScreen(L);
-          const angles = [-30, -15, 0, 15, 30];
-          const circleCenter = {x: 0, y: 0};
-          const circleRadius = 20;
+          <ellipse
+            cx={width/2}
+            cy={height/2}
+            rx={scale * 7.5}
+            ry={scale * ellipseHeight}
+            fill="rgba(0,0,255,0.1)"
+            stroke="blue"
+            strokeWidth={1 / zoomLevel}
+          />
 
-          return (
-            <>
-              <circle cx={sL.x} cy={sL.y} r="4" fill="purple"/>
-              {angles.map((angle, i) => {
-                const rayVector = calculateRayVector(angle);
-                const reflectionPaths = drawReflectedRay(L, rayVector, points, circleCenter, circleRadius);
-                
-                if (reflectionPaths) {
-                  const {firstIntersection, circleIntersection, secondCircleIntersection, reflectionEnd} = reflectionPaths;
-                  const sFirstIntersection = toScreen(firstIntersection.point);
+          <path
+            d={drawBezier(points)}
+            fill="none"
+            stroke="red"
+            strokeWidth="2"
+          />
+
+          {Object.entries(points).map(([key, point]) => (
+            <circle
+              key={key}
+              cx={toScreen(point).x}
+              cy={toScreen(point).y}
+              r="4"
+              fill={key === 'K' ? 'red' : 'black'}
+            />
+          ))}
+
+          {(() => {
+            const L = {
+              x: -12.5 + lightDistance,
+              y: -12.5 + lightDistance
+            };
+            const sL = toScreen(L);
+            const angles = [-30, -15, 0, 15, 30];
+            const circleCenter = {x: 0, y: 0};
+            
+            return (
+              <>
+                <circle cx={sL.x} cy={sL.y} r="4" fill="purple"/>
+                {angles.map((angle, i) => {
+                  const rayVector = calculateRayVector(angle);
+                  const reflectionPaths = drawReflectedRay(L, rayVector, points, circleCenter, circleRadius);
                   
-                  return (
-                    <g key={i}>
-                      <line
-                        x1={sL.x}
-                        y1={sL.y}
-                        x2={sFirstIntersection.x}
-                        y2={sFirstIntersection.y}
-                        stroke="purple"
-                        strokeWidth="1"
-                        strokeDasharray="4"
-                      />
-                      <line
-                        x1={sFirstIntersection.x}
-                        y1={sFirstIntersection.y}
-                        x2={toScreen(circleIntersection).x}
-                        y2={toScreen(circleIntersection).y}
-                        stroke="orange"
-                        strokeWidth="1"
-                        strokeDasharray="4"
-                      />
-                      {secondCircleIntersection ? (
-                        <>
+                  if (reflectionPaths) {
+                    const {firstIntersection, circleIntersection, secondCircleIntersection, reflectionEnd} = reflectionPaths;
+                    const sFirstIntersection = toScreen(firstIntersection.point);
+                    
+                    return (
+                      <g key={i}>
+                        <line
+                          x1={sL.x}
+                          y1={sL.y}
+                          x2={sFirstIntersection.x}
+                          y2={sFirstIntersection.y}
+                          stroke="purple"
+                          strokeWidth="1"
+                          strokeDasharray="4"
+                        />
+                        <line
+                          x1={sFirstIntersection.x}
+                          y1={sFirstIntersection.y}
+                          x2={toScreen(circleIntersection).x}
+                          y2={toScreen(circleIntersection).y}
+                          stroke="orange"
+                          strokeWidth="1"
+                          strokeDasharray="4"
+                        />
+                        {secondCircleIntersection ? (
+                          <>
+                            <line
+                              x1={toScreen(circleIntersection).x}
+                              y1={toScreen(circleIntersection).y}
+                              x2={toScreen(secondCircleIntersection).x}
+                              y2={toScreen(secondCircleIntersection).y}
+                              stroke="green"
+                              strokeWidth="1"
+                              strokeDasharray="4"
+                            />
+                            <line
+                              x1={toScreen(secondCircleIntersection).x}
+                              y1={toScreen(secondCircleIntersection).y}
+                              x2={toScreen(reflectionEnd).x}
+                              y2={toScreen(reflectionEnd).y}
+                              stroke="blue"
+                              strokeWidth="1"
+                              strokeDasharray="4"
+                            />
+                            {reflectionPaths.pinkReflection && (
+                              <line
+                                x1={toScreen(reflectionPaths.pinkReflection.start).x}
+                                y1={toScreen(reflectionPaths.pinkReflection.start).y}
+                                x2={toScreen(reflectionPaths.pinkReflection.end).x}
+                                y2={toScreen(reflectionPaths.pinkReflection.end).y}
+                                stroke="#FF1493"
+                                strokeWidth="1"
+                                strokeDasharray="4"
+                              />
+                            )}
+                            {reflectionPaths.skyblueReflection && (
+                              <line
+                                x1={toScreen(reflectionPaths.skyblueReflection.start).x}
+                                y1={toScreen(reflectionPaths.skyblueReflection.start).y}
+                                x2={toScreen(reflectionPaths.skyblueReflection.end).x}
+                                y2={toScreen(reflectionPaths.skyblueReflection.end).y}
+                                stroke="#00BFFF"
+                                strokeWidth="1"
+                                strokeDasharray="4"
+                              />
+                            )}
+                          </>
+                        ) : (
                           <line
                             x1={toScreen(circleIntersection).x}
                             y1={toScreen(circleIntersection).y}
-                            x2={toScreen(secondCircleIntersection).x}
-                            y2={toScreen(secondCircleIntersection).y}
+                            x2={toScreen(reflectionEnd).x}
+                            y2={toScreen(reflectionEnd).y}
                             stroke="green"
                             strokeWidth="1"
                             strokeDasharray="4"
                           />
-                          <line
-                            x1={toScreen(secondCircleIntersection).x}
-                            y1={toScreen(secondCircleIntersection).y}
-                            x2={toScreen(reflectionEnd).x}
-                            y2={toScreen(reflectionEnd).y}
-                            stroke="blue"
-                            strokeWidth="1"
-                            strokeDasharray="4"
-                          />
-                          {reflectionPaths.pinkReflection && (
-                            <line
-                              x1={toScreen(reflectionPaths.pinkReflection.start).x}
-                              y1={toScreen(reflectionPaths.pinkReflection.start).y}
-                              x2={toScreen(reflectionPaths.pinkReflection.end).x}
-                              y2={toScreen(reflectionPaths.pinkReflection.end).y}
-                              stroke="#FF1493"
-                              strokeWidth="1"
-                              strokeDasharray="4"
-                            />
-                          )}
-                          {reflectionPaths.skyblueReflection && (
-                            <line
-                              x1={toScreen(reflectionPaths.skyblueReflection.start).x}
-                              y1={toScreen(reflectionPaths.skyblueReflection.start).y}
-                              x2={toScreen(reflectionPaths.skyblueReflection.end).x}
-                              y2={toScreen(reflectionPaths.skyblueReflection.end).y}
-                              stroke="#00BFFF"
-                              strokeWidth="1"
-                              strokeDasharray="4"
-                            />
-                          )}
-                        </>
-                      ) : (
-                        <line
-                          x1={toScreen(circleIntersection).x}
-                          y1={toScreen(circleIntersection).y}
-                          x2={toScreen(reflectionEnd).x}
-                          y2={toScreen(reflectionEnd).y}
-                          stroke="green"
-                          strokeWidth="1"
-                          strokeDasharray="4"
-                        />
-                      )}
-                    </g>
-                  );
-                }
-                return null;
-              })}
-            </>
-          );
-        })()}
+                        )}
+                      </g>
+                    );
+                  }
+                  return null;
+                })}
+              </>
+            );
+          })()}
 
-        <line
-          x1={toScreen(points.J).x}
-          y1={toScreen(points.J).y}
-          x2={toScreen(points.Jp).x}
-          y2={toScreen(points.Jp).y}
-          stroke="red"
-          strokeWidth="2"
-        />
+          <line
+            x1={toScreen(points.J).x}
+            y1={toScreen(points.J).y}
+            x2={toScreen(points.Jp).x}
+            y2={toScreen(points.Jp).y}
+            stroke="red"
+            strokeWidth="2"
+          />
 
-        {(() => {
-          const H = findEllipseYAxisIntersection(7.5, 5);
-          
-          const dir45 = {
-            x: Math.cos(Math.PI/4),
-            y: Math.sin(Math.PI/4)
-          };
-          
-          const Lp = find45DegreeCircleIntersection(H, dir45, {x: 0, y: 0}, 20);
-          
-          const verticalDir = {x: 0, y: 1};
-          const verticalIntersection = findCircleIntersection(H, verticalDir, {x: 0, y: 0}, 20);
-          
-          return (
-            <>
-              {/* H점 */}
-              <circle 
-                cx={toScreen(H).x} 
-                cy={toScreen(H).y} 
-                r="4" 
-                fill="#00FF00"
-              />
-              
-              {/* H에서 L'까지의 45도 직선 */}
-              <line
-                x1={toScreen(H).x}
-                y1={toScreen(H).y}
-                x2={toScreen(Lp).x}
-                y2={toScreen(Lp).y}
-                stroke="#00FF00"
-                strokeWidth="2"
-              />
-              
-              {/* H에서 수직으로 위로 가는 직선 */}
-              <line
-                x1={toScreen(H).x}
-                y1={toScreen(H).y}
-                x2={toScreen(verticalIntersection).x}
-                y2={toScreen(verticalIntersection).y}
-                stroke="#00FF00"
-                strokeWidth="2"
-              />
-              
-              {/* L' 점 */}
-              <circle 
-                cx={toScreen(Lp).x} 
-                cy={toScreen(Lp).y} 
-                r="4" 
-                fill="#00FF00"
-              />
-            </>
-          );
-        })()}
-      </svg>
+          {(() => {
+            const H = findEllipseYAxisIntersection(7.5, ellipseHeight);
+            
+            const dir45 = {
+              x: Math.cos(Math.PI/4),
+              y: Math.sin(Math.PI/4)
+            };
+            
+            const Lp = find45DegreeCircleIntersection(H, dir45, {x: 0, y: 0}, circleRadius);
+            
+            const verticalDir = {x: 0, y: 1};
+            const verticalIntersection = findCircleIntersection(H, verticalDir, {x: 0, y: 0}, circleRadius);
+            
+            return (
+              <>
+                {/* H점 */}
+                <circle 
+                  cx={toScreen(H).x} 
+                  cy={toScreen(H).y} 
+                  r="4" 
+                  fill="#00FF00"
+                />
+                
+                {/* H에서 L'까지의 45도 직선 */}
+                <line
+                  x1={toScreen(H).x}
+                  y1={toScreen(H).y}
+                  x2={toScreen(Lp).x}
+                  y2={toScreen(Lp).y}
+                  stroke="#00FF00"
+                  strokeWidth="2"
+                />
+                
+                {/* H에서 수직으로 위로 가는 직선 */}
+                <line
+                  x1={toScreen(H).x}
+                  y1={toScreen(H).y}
+                  x2={toScreen(verticalIntersection).x}
+                  y2={toScreen(verticalIntersection).y}
+                  stroke="#00FF00"
+                  strokeWidth="2"
+                />
+                
+                {/* L' 점 */}
+                <circle 
+                  cx={toScreen(Lp).x} 
+                  cy={toScreen(Lp).y} 
+                  r="4" 
+                  fill="#00FF00"
+                />
+              </>
+            );
+          })()}
+        </svg>
+      </div>
+
+      {/* 오른쪽: 컨트롤 패널 */}
+      <div className="w-64 space-y-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">원 반지름:</label>
+          <input 
+            type="range" 
+            min="10" 
+            max="30" 
+            step="0.5"
+            value={circleRadius}
+            onChange={(e) => setCircleRadius(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-sm">반지름: {circleRadius}</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">K 위치 (y축):</label>
+          <input 
+            type="range" 
+            min="-25" 
+            max="-5" 
+            step="0.5"
+            value={kPosition}
+            onChange={(e) => setKPosition(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-sm">K y-위치: {kPosition}</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">L 위치 (거리):</label>
+          <input 
+            type="range" 
+            min="-5" 
+            max="5" 
+            step="0.5"
+            value={lightDistance}
+            onChange={(e) => setLightDistance(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-sm">L 거리: {lightDistance}</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">줌 레벨:</label>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setZoomLevel(prev => Math.max(0.2, prev - 0.1))}
+              className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              -
+            </button>
+            <button 
+              onClick={() => setZoomLevel(1)}
+              className="px-2 py-1 bg-gray-500 text-white rounded text-sm"
+            >
+              리셋
+            </button>
+            <button 
+              onClick={() => setZoomLevel(prev => Math.min(2, prev + 0.1))}
+              className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              +
+            </button>
+          </div>
+          <div className="text-sm">줌: {(zoomLevel * 100).toFixed(0)}%</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">타원 높이:</label>
+          <input 
+            type="range" 
+            min="3" 
+            max="10" 
+            step="0.1"
+            value={ellipseHeight}
+            onChange={(e) => setEllipseHeight(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-sm">타원 높이: {ellipseHeight.toFixed(1)}</div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">JJ' 거리:</label>
+          <input 
+            type="range" 
+            min="8" 
+            max="15" 
+            step="0.5"
+            value={jjDistance}
+            onChange={(e) => setJJDistance(Number(e.target.value))}
+            className="w-full"
+          />
+          <div className="text-sm">JJ' 거리: {jjDistance.toFixed(1)}</div>
+        </div>
+      </div>
     </div>
   );
 };
