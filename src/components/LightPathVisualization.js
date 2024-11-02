@@ -501,11 +501,65 @@ const LightPathVisualization = () => {
     }, null);
   };
 
+  const MathematicalAnalysis = ({ 
+    circleRadius, 
+    ellipseHeight, 
+    jjDistance 
+  }) => {
+    // y축과 만나는 중간점 계산 (t = 0.5 지점)
+    const points = getControlPoints(kPosition);
+    const midPoint = getBezierPoint(points, 0.5);
+    const {J, Jp} = points;
+
+    return (
+      <div className="w-72 shrink-0">
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 className="text-lg font-semibold mb-3">CAD 참조 데이터</h3>
+          <div className="space-y-4 font-mono text-sm">
+            <div>
+              <h4 className="font-medium">3점 호 데이터:</h4>
+              <ul className="space-y-1">
+                <li>P1: ({J.x.toFixed(3)}, {J.y.toFixed(3)})</li>
+                <li>P2: ({midPoint.x.toFixed(3)}, {midPoint.y.toFixed(3)})</li>
+                <li>P3: ({Jp.x.toFixed(3)}, {Jp.y.toFixed(3)})</li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-medium">중심 원/타원 데이터:</h4>
+              <ul className="space-y-1">
+                <li>중심: (0.000, 0.000)</li>
+                <li>원 반지름: {circleRadius.toFixed(3)}</li>
+                <li>타원 x반지름: 7.500</li>
+                <li>타원 y반지름: {ellipseHeight.toFixed(3)}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        {/* 기존 수학적 분석 내용 */}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex flex-row gap-4 w-full max-w-6xl p-4">
-      {/* 왼쪽: 시뮬레이션 뷰 */}
-      <div className="flex-1">
-        <svg width={width} height={height} className="border border-gray-300">
+    <div className="flex flex-row gap-6 w-full p-4">
+      {/* 왼쪽: 수학적 분석 */}
+      <div className="w-72 shrink-0">
+        <MathematicalAnalysis 
+          circleRadius={circleRadius}
+          ellipseHeight={ellipseHeight}
+          jjDistance={jjDistance}
+        />
+      </div>
+
+      {/* 가운데: 시뮬레이션 뷰 */}
+      <div className="flex-1 flex justify-center">
+        <svg 
+          width={width} 
+          height={height} 
+          className="border border-gray-300 bg-white rounded-lg shadow-sm"
+        >
           <line 
             x1="0" y1={height/2} 
             x2={width} y2={height/2} 
@@ -723,8 +777,10 @@ const LightPathVisualization = () => {
         </svg>
       </div>
 
-      {/* 오른쪽: 컨트롤 패널 */}
-      <div className="w-64 space-y-6">
+      {/* 오른쪽: 파라미터 조정 패널 */}
+      <div className="w-72 shrink-0 space-y-6 p-4 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-semibold">파라미터 조정</h3>
+        
         <div className="space-y-2">
           <label className="block text-sm font-medium">원 반지름:</label>
           <input 
@@ -745,12 +801,12 @@ const LightPathVisualization = () => {
             type="range" 
             min="-25" 
             max="-5" 
-            step="0.5"
+            step="0.1"
             value={kPosition}
             onChange={(e) => setKPosition(Number(e.target.value))}
             className="w-full"
           />
-          <div className="text-sm">K y-위치: {kPosition}</div>
+          <div className="text-sm">K y-위치: {kPosition.toFixed(1)}</div>
         </div>
 
         <div className="space-y-2">
