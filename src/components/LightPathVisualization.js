@@ -467,7 +467,7 @@ const LightPathVisualization = () => {
   const points = getControlPoints(kPosition);
 
   const findLineIntersection = (origin, direction, p1, p2) => {
-    // 선분과 광선의 교차점 계산
+    // 선분 광선의 차점 계산
     const x1 = p1.x, y1 = p1.y;
     const x2 = p2.x, y2 = p2.y;
     const x3 = origin.x, y3 = origin.y;
@@ -541,6 +541,46 @@ const LightPathVisualization = () => {
       </div>
     );
   };
+
+  const calculateDistanceToLPrime = useCallback((rayPath, lPrimePoint) => {
+    if (!rayPath) return Infinity;
+    
+    const segments = [
+      rayPath.firstIntersection && {
+        start: rayPath.origin,
+        end: rayPath.firstIntersection.point
+      },
+      rayPath.circleIntersection && {
+        start: rayPath.firstIntersection.point,
+        end: rayPath.circleIntersection
+      },
+      rayPath.secondCircleIntersection && {
+        start: rayPath.circleIntersection,
+        end: rayPath.secondCircleIntersection
+      },
+      rayPath.reflectionEnd && {
+        start: rayPath.secondCircleIntersection || rayPath.circleIntersection,
+        end: rayPath.reflectionEnd
+      }
+    ].filter(Boolean);
+
+    return Math.min(...segments.map(segment => {
+      const segVec = {
+        x: segment.end.x - segment.start.x,
+        y: segment.end.y - segment.start.y
+      };
+      const segLen = Math.sqrt(segVec.x * segVec.x + segVec.y * segVec.y);
+      const toPoint = {
+        x: lPrimePoint.x - segment.start.x,
+        y: lPrimePoint.y - segment.start.y
+      };
+      
+      const proj = (toPoint.x * segVec.x + toPoint.y * segVec.y) / segLen;
+      if (proj < 0 || proj > segLen) return Infinity;
+      
+      return Math.abs(toPoint.x * segVec.y - toPoint.y * segVec.x) / segLen;
+    }));
+  }, []);
 
   return (
     <div className="flex flex-row gap-6 w-full p-4">
@@ -754,7 +794,7 @@ const LightPathVisualization = () => {
                   strokeWidth="2"
                 />
                 
-                {/* H에서 수직으로 위로 가는 직선 */}
+                {/* H에서 수직으로 위로 가 직선 */}
                 <line
                   x1={toScreen(H).x}
                   y1={toScreen(H).y}
@@ -782,45 +822,113 @@ const LightPathVisualization = () => {
         <h3 className="text-lg font-semibold">파라미터 조정</h3>
         
         <div className="space-y-2">
-          <label className="block text-sm font-medium">원 반지름:</label>
+          <label className="block text-sm font-medium">적분구 반지름:</label>
           <input 
             type="range" 
-            min="10" 
-            max="30" 
-            step="0.5"
+            min={10} 
+            max={30} 
+            step={0.5}
             value={circleRadius}
             onChange={(e) => setCircleRadius(Number(e.target.value))}
             className="w-full"
           />
-          <div className="text-sm">반지름: {circleRadius}</div>
+          <input 
+            type="number"
+            value={circleRadius}
+            onChange={(e) => setCircleRadius(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-sm border rounded"
+            min={10}
+            max={30}
+            step={0.5}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">샘플 높이:</label>
+          <input 
+            type="range" 
+            min={3} 
+            max={15} 
+            step={0.1}
+            value={ellipseHeight}
+            onChange={(e) => setEllipseHeight(Number(e.target.value))}
+            className="w-full"
+          />
+          <input 
+            type="number"
+            value={ellipseHeight}
+            onChange={(e) => setEllipseHeight(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-sm border rounded"
+            min={3}
+            max={15}
+            step={0.1}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium">배플 너비:</label>
+          <input 
+            type="range" 
+            min={5} 
+            max={20} 
+            step={0.1}
+            value={jjDistance}
+            onChange={(e) => setJJDistance(Number(e.target.value))}
+            className="w-full"
+          />
+          <input 
+            type="number"
+            value={jjDistance}
+            onChange={(e) => setJJDistance(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-sm border rounded"
+            min={5}
+            max={20}
+            step={0.1}
+          />
         </div>
 
         <div className="space-y-2">
           <label className="block text-sm font-medium">K 위치 (y축):</label>
           <input 
             type="range" 
-            min="-25" 
-            max="-5" 
-            step="0.1"
+            min={-40} 
+            max={-5} 
+            step={0.1}
             value={kPosition}
             onChange={(e) => setKPosition(Number(e.target.value))}
             className="w-full"
           />
-          <div className="text-sm">K y-위치: {kPosition.toFixed(1)}</div>
+          <input 
+            type="number"
+            value={kPosition}
+            onChange={(e) => setKPosition(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-sm border rounded"
+            min={-40}
+            max={-5}
+            step={0.1}
+          />
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium">L 위치 (거리):</label>
+          <label className="block text-sm font-medium">광원 위치:</label>
           <input 
             type="range" 
-            min="-5" 
-            max="5" 
-            step="0.5"
+            min={-10} 
+            max={10} 
+            step={0.1}
             value={lightDistance}
             onChange={(e) => setLightDistance(Number(e.target.value))}
             className="w-full"
           />
-          <div className="text-sm">L 거리: {lightDistance}</div>
+          <input 
+            type="number"
+            value={lightDistance}
+            onChange={(e) => setLightDistance(Number(e.target.value))}
+            className="w-20 px-2 py-1 text-sm border rounded"
+            min={-10}
+            max={10}
+            step={0.1}
+          />
         </div>
 
         <div className="space-y-2">
@@ -846,34 +954,6 @@ const LightPathVisualization = () => {
             </button>
           </div>
           <div className="text-sm">줌: {(zoomLevel * 100).toFixed(0)}%</div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">타원 높이:</label>
-          <input 
-            type="range" 
-            min="3" 
-            max="10" 
-            step="0.1"
-            value={ellipseHeight}
-            onChange={(e) => setEllipseHeight(Number(e.target.value))}
-            className="w-full"
-          />
-          <div className="text-sm">타원 높이: {ellipseHeight.toFixed(1)}</div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">JJ' 거리:</label>
-          <input 
-            type="range" 
-            min="8" 
-            max="15" 
-            step="0.5"
-            value={jjDistance}
-            onChange={(e) => setJJDistance(Number(e.target.value))}
-            className="w-full"
-          />
-          <div className="text-sm">JJ' 거리: {jjDistance.toFixed(1)}</div>
         </div>
       </div>
     </div>
