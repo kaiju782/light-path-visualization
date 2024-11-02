@@ -138,6 +138,14 @@ const LightPathVisualization = () => {
     return null;
   }, []);
 
+  const findEllipseYAxisIntersection = useCallback((rx, ry) => {
+    return {x: 0, y: ry}; // 상부 교점만 반환
+  }, []);
+
+  const find45DegreeCircleIntersection = useCallback((startPoint, direction, center, radius) => {
+    return findCircleIntersection(startPoint, direction, center, radius);
+  }, [findCircleIntersection]);
+
   const drawReflectedRay = useCallback((origin, direction, points, circleCenter, circleRadius) => {
     const firstIntersection = findIntersection(origin, direction, points);
     if (!firstIntersection) return null;
@@ -704,6 +712,60 @@ const LightPathVisualization = () => {
           stroke="red"
           strokeWidth="2"
         />
+
+        {(() => {
+          const H = findEllipseYAxisIntersection(7.5, 5);
+          
+          const dir45 = {
+            x: Math.cos(Math.PI/4),
+            y: Math.sin(Math.PI/4)
+          };
+          
+          const Lp = find45DegreeCircleIntersection(H, dir45, {x: 0, y: 0}, 20);
+          
+          const verticalDir = {x: 0, y: 1};
+          const verticalIntersection = findCircleIntersection(H, verticalDir, {x: 0, y: 0}, 20);
+          
+          return (
+            <>
+              {/* H점 */}
+              <circle 
+                cx={toScreen(H).x} 
+                cy={toScreen(H).y} 
+                r="4" 
+                fill="#00FF00"
+              />
+              
+              {/* H에서 L'까지의 45도 직선 */}
+              <line
+                x1={toScreen(H).x}
+                y1={toScreen(H).y}
+                x2={toScreen(Lp).x}
+                y2={toScreen(Lp).y}
+                stroke="#00FF00"
+                strokeWidth="2"
+              />
+              
+              {/* H에서 수직으로 위로 가는 직선 */}
+              <line
+                x1={toScreen(H).x}
+                y1={toScreen(H).y}
+                x2={toScreen(verticalIntersection).x}
+                y2={toScreen(verticalIntersection).y}
+                stroke="#00FF00"
+                strokeWidth="2"
+              />
+              
+              {/* L' 점 */}
+              <circle 
+                cx={toScreen(Lp).x} 
+                cy={toScreen(Lp).y} 
+                r="4" 
+                fill="#00FF00"
+              />
+            </>
+          );
+        })()}
       </svg>
     </div>
   );
